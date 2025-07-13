@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { WizardProvider } from "~/components/wizard/WizardContext";
-import { WizardComplete } from "~/components/wizard/WizardComplete";
+import { Wizard } from "~/components/wizard/WizardComplete";
 
 export default function WizardCompletePage() {
   return (
@@ -12,7 +12,7 @@ export default function WizardCompletePage() {
       </Head>
       
       <WizardProvider>
-        <WizardComplete />
+        <Wizard />
       </WizardProvider>
     </>
   );

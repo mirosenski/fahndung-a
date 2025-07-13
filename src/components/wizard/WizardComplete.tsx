@@ -1,29 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/router";
-import Link from "next/link";
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, ChevronLeft, Save, AlertCircle, CheckCircle, Upload, MapPin, Calendar, User, FileText, Shield, Camera, Eye, CreditCard, Phone, Mail, Share2, Printer, RotateCw, Info } from 'lucide-react';
+import { useRouter } from "next/navigation";
+import { useWizard } from "./WizardContext";
+import WizardPreviewTabs from "./WizardPreviewTabs";
+import { Header } from "~/components/layout/Header";
+import { Footer } from "~/components/layout/Footer";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Progress } from "~/components/ui/progress";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Check, 
-  FileText, 
-  User, 
-  UserCheck, 
-  ClipboardList, 
-  Phone,
-  Shield,
-  Eye,
-  Globe
-} from "lucide-react";
-import { useWizard } from "./WizardContext";
-import { WIZARD_STEPS, DEMO_CASES } from "~/types/wizard";
 
-export function WizardComplete() {
+interface FormData {
+  [key: string]: any;
+}
+
+interface Category {
+  id: string;
+  label: string;
+  icon: any;
+  color: string;
+  description: string;
+}
+
+export function Wizard() {
   const router = useRouter();
   const { 
     currentStep, 
@@ -38,22 +40,106 @@ export function WizardComplete() {
     canGoPrevious 
   } = useWizard();
 
-  const [selectedDemo, setSelectedDemo] = useState("");
+  const [category, setCategory] = useState<string>('');
+  const [formData, setFormData] = useState<FormData>({});
+  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [errors, setErrors] = useState<FormData>({});
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+  const [selectedDemo, setSelectedDemo] = useState<string>("");
 
-  if (!isClient) {
-    return <div>Loading...</div>;
-  }
+  // Auto-save functionality
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      if (Object.keys(formData).length > 0) {
+        handleAutoSave();
+      }
+    }, 10000);
 
-  const handleNext = () => {
-    if (currentStep < 5) {
-      setCurrentStep((currentStep + 1) as any);
+    return () => clearInterval(autoSaveInterval);
+  }, [formData]);
+
+  const handleAutoSave = async () => {
+    setIsAutoSaving(true);
+    // Simulate save
+    setTimeout(() => {
+      setIsAutoSaving(false);
+      setLastSaved(new Date());
+    }, 1000);
+  };
+
+  const categories: Category[] = [
+    { 
+      id: 'WANTED_PERSON', 
+      label: 'Straftäter', 
+      icon: Shield,
+      color: 'bg-red-500',
+      description: 'Fahndung nach tatverdächtigen Personen'
+    },
+    { 
+      id: 'MISSING_PERSON', 
+      label: 'Vermisste Person', 
+      icon: User,
+      color: 'bg-blue-500',
+      description: 'Suche nach vermissten Personen'
+    },
+    { 
+      id: 'UNKNOWN_DEAD', 
+      label: 'Unbekannte Tote', 
+      icon: AlertCircle,
+      color: 'bg-gray-500',
+      description: 'Identifizierung unbekannter Verstorbener'
+    },
+    { 
+      id: 'STOLEN_GOODS', 
+      label: 'Gesuchte Sachen', 
+      icon: FileText,
+      color: 'bg-green-500',
+      description: 'Fahndung nach gestohlenem Eigentum'
+    }
+  ];
+
+  const getStepsForCategory = (cat: string): string[] => {
+    const baseSteps = ['category', 'basic', 'media', 'contact'];
+    const categorySteps: { [key: string]: string[] } = {
+      'WANTED_PERSON': ['category', 'basic', 'crime', 'appearance', 'media', 'contact'],
+      'MISSING_PERSON': ['category', 'basic', 'lastSeen', 'appearance', 'medical', 'media', 'contact'],
+      'UNKNOWN_DEAD': ['category', 'basic', 'discovery', 'appearance', 'belongings', 'media', 'contact'],
+      'STOLEN_GOODS': ['category', 'basic', 'item', 'theft', 'media', 'contact']
+    };
+    return categorySteps[cat] || baseSteps;
+  };
+
+  const steps = getStepsForCategory(category);
+  const progress = steps.length > 0 ? (currentStep / steps.length) * 100 : 0;
+
+  const nextStep = () => {
+    if (validateStep()) {
+      if (currentStep >= steps.length) {
+        setShowPreview(true);
+      } else {
+        setCurrentStep((currentStep + 1) as any);
+      }
     }
   };
 
-  const handlePrevious = () => {
+  const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep((currentStep - 1) as any);
     }
+  };
+
+  const validateStep = (): boolean => {
+    // Simple validation
+    return true;
+  };
+
+  const updateFormData = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleBackToWizard = () => {
+    setShowPreview(false);
   };
 
   const handleDemoSelect = (demoKey: string) => {
@@ -63,488 +149,444 @@ export function WizardComplete() {
 
   const handleFinish = () => {
     alert("Fahndung wurde erfolgreich erstellt!");
-    router.push("/admin");
+    router.replace("/admin");
   };
 
   const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Kategorie *</label>
-                <select
-                  value={data.step1.category}
-                  onChange={(e) => updateData("step1", { category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="">Kategorie wählen</option>
-                  <option value="WANTED_PERSON">Straftäter</option>
-                  <option value="MISSING_PERSON">Vermisste Person</option>
-                  <option value="UNKNOWN_DEAD">Unbekannte Tote</option>
-                  <option value="STOLEN_GOODS">Gesuchte Sachen</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Priorität *</label>
-                <select
-                  value={data.step1.priority}
-                  onChange={(e) => updateData("step1", { priority: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="Normal">Normal</option>
-                  <option value="EILFAHNDUNG">EILFAHNDUNG</option>
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Aktenzeichen *</label>
-                <input
-                  type="text"
-                  value={data.step1.caseNumber}
-                  onChange={(e) => updateData("step1", { caseNumber: e.target.value })}
-                  placeholder="z.B. BW-1234/1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Interner Titel</label>
-                <input
-                  type="text"
-                  value={data.step1.internalTitle}
-                  onChange={(e) => updateData("step1", { internalTitle: e.target.value })}
-                  placeholder="Interner Titel für die Verwaltung"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-          </div>
-        );
+    const currentStepName = steps[currentStep - 1];
 
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Name *</label>
-                <input
-                  type="text"
-                  value={data.step2.displayName}
-                  onChange={(e) => updateData("step2", { displayName: e.target.value })}
-                  placeholder="Name der gesuchten Person"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Ort *</label>
-                <input
-                  type="text"
-                  value={data.step2.location}
-                  onChange={(e) => updateData("step2", { location: e.target.value })}
-                  placeholder="Ort der Fahndung"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Kurzinformation</label>
-                <input
-                  type="text"
-                  value={data.step2.shortInfo}
-                  onChange={(e) => updateData("step2", { shortInfo: e.target.value })}
-                  placeholder="Kurze Beschreibung"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Datum</label>
-                <input
-                  type="date"
-                  value={data.step2.date}
-                  onChange={(e) => updateData("step2", { date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-          </div>
-        );
+    if (!currentStepName) {
+      return <div>Step not found</div>;
+    }
 
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Alter</label>
-                <input
-                  type="text"
-                  value={data.step3.age}
-                  onChange={(e) => updateData("step3", { age: e.target.value })}
-                  placeholder="z.B. 28"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Größe</label>
-                <input
-                  type="text"
-                  value={data.step3.height}
-                  onChange={(e) => updateData("step3", { height: e.target.value })}
-                  placeholder="z.B. 175 cm"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Statur</label>
-                <input
-                  type="text"
-                  value={data.step3.build}
-                  onChange={(e) => updateData("step3", { build: e.target.value })}
-                  placeholder="z.B. schlank"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Haarfarbe</label>
-                <input
-                  type="text"
-                  value={data.step3.hairColor}
-                  onChange={(e) => updateData("step3", { hairColor: e.target.value })}
-                  placeholder="z.B. dunkelbraun"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Haarstil</label>
-                <input
-                  type="text"
-                  value={data.step3.hairStyle}
-                  onChange={(e) => updateData("step3", { hairStyle: e.target.value })}
-                  placeholder="z.B. kurz"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Augenfarbe</label>
-                <input
-                  type="text"
-                  value={data.step3.eyes}
-                  onChange={(e) => updateData("step3", { eyes: e.target.value })}
-                  placeholder="z.B. braun"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Besondere Merkmale</label>
-                <input
-                  type="text"
-                  value={data.step3.features}
-                  onChange={(e) => updateData("step3", { features: e.target.value })}
-                  placeholder="z.B. Tattoo am linken Unterarm"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Bekleidung</label>
-              <input
-                type="text"
-                value={data.step3.clothing}
-                onChange={(e) => updateData("step3", { clothing: e.target.value })}
-                placeholder="z.B. schwarze Kapuzenjacke, dunkle Jeans"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-2">Hauptfrage *</label>
-              <input
-                type="text"
-                value={data.step4.question}
-                onChange={(e) => updateData("step4", { question: e.target.value })}
-                placeholder="z.B. Wer erkennt die Person?"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Beschreibung *</label>
-              <textarea
-                value={data.step4.description}
-                onChange={(e) => updateData("step4", { description: e.target.value })}
-                placeholder="Detaillierte Beschreibung des Falls"
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Hintergrund</label>
-              <textarea
-                value={data.step4.context}
-                onChange={(e) => updateData("step4", { context: e.target.value })}
-                placeholder="Zusätzliche Hintergrundinformationen"
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Telefon *</label>
-                <input
-                  type="tel"
-                  value={data.step5.tel}
-                  onChange={(e) => updateData("step5", { tel: e.target.value })}
-                  placeholder="z.B. 06221/110"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">E-Mail</label>
-                <input
-                  type="email"
-                  value={data.step5.email}
-                  onChange={(e) => updateData("step5", { email: e.target.value })}
-                  placeholder="z.B. kripo@polizei.bwl.de"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Dienststelle *</label>
-                <input
-                  type="text"
-                  value={data.step5.station}
-                  onChange={(e) => updateData("step5", { station: e.target.value })}
-                  placeholder="z.B. PP Heidelberg"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Ort</label>
-                <input
-                  type="text"
-                  value={data.step5.location}
-                  onChange={(e) => updateData("step5", { location: e.target.value })}
-                  placeholder="z.B. Heidelberg"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="preview"
-                  checked={data.step5.preview}
-                  onChange={(e) => updateData("step5", { preview: e.target.checked })}
-                  className="rounded"
-                />
-                <label htmlFor="preview" className="text-sm font-medium">
-                  Vorschau aktivieren
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="publish"
-                  checked={data.step5.publish}
-                  onChange={(e) => updateData("step5", { publish: e.target.checked })}
-                  className="rounded"
-                />
-                <label htmlFor="publish" className="text-sm font-medium">
-                  Sofort veröffentlichen
-                </label>
-              </div>
-            </div>
-          </div>
-        );
-
+    switch (currentStepName) {
+      case 'category':
+        return <CategorySelection />;
+      case 'basic':
+        return <BasicInfoStep />;
+      case 'crime':
+        return <CrimeDetailsStep />;
+      case 'appearance':
+        return <AppearanceStep />;
+      case 'media':
+        return <MediaUploadStep />;
+      case 'contact':
+        return <ContactStep />;
       default:
-        return null;
+        return <div>Step not found: {currentStepName}</div>;
     }
   };
 
-  return (
-    <>
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Shield className="w-8 h-8 text-primary" />
-              <Link href="/" className="text-2xl font-bold hover:text-primary">
-                Fahndung
-              </Link>
-            </div>
-            <nav className="flex items-center space-x-6">
-              <Link href="/admin" className="text-sm font-medium hover:text-primary">
-                Next-Admin Dashboard
-              </Link>
-              <Link href="/wizard-complete" className="text-sm font-medium text-primary">
-                Neue Fahndung
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      <main className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          {/* Page Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-3xl font-bold">Neue Fahndung erstellen</h1>
-            </div>
-            <Button variant="outline" onClick={() => router.push("/")}>
-              Abbrechen
-            </Button>
-          </div>
-
-        {/* Demo-Auswahl (nur im ersten Schritt) */}
-        {currentStep === 1 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Demo-Daten laden</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {Object.keys(DEMO_CASES).map((demoKey) => (
-                  <Button
-                    key={demoKey}
-                    variant={selectedDemo === demoKey ? "default" : "outline"}
-                    onClick={() => handleDemoSelect(demoKey)}
-                    className="justify-start"
-                  >
-                    <Check className="w-4 h-4 mr-2" />
-                    {demoKey}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Progress */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Fortschritt</span>
-            <span className="text-sm text-gray-500">{currentStep} von 5</span>
-          </div>
-          <Progress value={getProgress()} className="h-2" />
-        </div>
-
-        {/* Steps */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Schritte</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {WIZARD_STEPS.map((step) => {
-                    const Icon = step.icon === "file-text" ? FileText :
-                                step.icon === "user" ? User :
-                                step.icon === "user-check" ? UserCheck :
-                                step.icon === "clipboard-list" ? ClipboardList :
-                                step.icon === "phone" ? Phone : FileText;
-                    
-                    return (
-                      <div
-                        key={step.id}
-                        className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer ${
-                          currentStep === step.id
-                            ? "bg-primary text-primary-foreground"
-                            : currentStep > step.id
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
-                                                 onClick={() => setCurrentStep(step.id as any)}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <div className="flex-1">
-                          <div className="font-medium">{step.title}</div>
-                          <div className="text-xs opacity-75">{step.description}</div>
-                        </div>
-                        {currentStep > step.id && <Check className="w-4 h-4" />}
-                      </div>
-                    );
-                  })}
+  const CategorySelection = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Wählen Sie die Fahndungskategorie</h2>
+        <p className="text-gray-600">Bitte wählen Sie die passende Kategorie für Ihre Fahndung aus.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {categories.map((cat) => {
+          const Icon = cat.icon;
+          return (
+            <Card 
+              key={cat.id}
+              className={`cursor-pointer transition-all hover:shadow-md ${
+                category === cat.id 
+                  ? 'ring-2 ring-blue-500 bg-blue-50' 
+                  : 'hover:border-gray-300'
+              }`}
+              onClick={() => {
+                setCategory(cat.id);
+                updateFormData('category', cat.id);
+              }}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className={`p-3 rounded-lg ${cat.color} text-white`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{cat.label}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{cat.description}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const BasicInfoStep = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Grundlegende Informationen</h2>
+        <p className="text-gray-600">Erfassen Sie die wichtigsten Basisdaten.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="priority">
+            Priorität <span className="text-red-500">*</span>
+          </Label>
+          <select 
+            id="priority"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => updateFormData('priority', e.target.value)}
+            defaultValue={formData.priority || ''}
+          >
+            <option value="">Bitte wählen</option>
+            <option value="NORMAL">Normal</option>
+            <option value="URGENT">Dringend</option>
+            <option value="CRITICAL">EILFAHNDUNG</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="caseNumber">
+            Aktenzeichen <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="caseNumber"
+            type="text"
+            placeholder="z.B. BW-2024/123"
+            onChange={(e) => updateFormData('caseNumber', e.target.value)}
+            defaultValue={formData.caseNumber || ''}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="internalTitle">
+            Interner Titel
+          </Label>
+          <Input
+            id="internalTitle"
+            type="text"
+            placeholder="Kurzer interner Titel"
+            onChange={(e) => updateFormData('internalTitle', e.target.value)}
+            defaultValue={formData.internalTitle || ''}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="publicTitle">
+            Öffentlicher Titel <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="publicTitle"
+            type="text"
+            placeholder="Titel für die Öffentlichkeit"
+            onChange={(e) => updateFormData('publicTitle', e.target.value)}
+            defaultValue={formData.publicTitle || ''}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const CrimeDetailsStep = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Tatdetails</h2>
+        <p className="text-gray-600">Beschreiben Sie die Straftat und Umstände.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Tatvorwurf <span className="text-red-500">*</span>
+          </label>
+          <select 
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={(e) => updateFormData('crimeType', e.target.value)}
+          >
+            <option value="">Bitte wählen</option>
+            <option value="murder">Mord/Totschlag</option>
+            <option value="robbery">Raub/Überfall</option>
+            <option value="fraud">Betrug</option>
+            <option value="assault">Körperverletzung</option>
+            <option value="other">Sonstiges</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Tatort <span className="text-red-500">*</span>
+          </label>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ort eingeben"
+              onChange={(e) => updateFormData('crimeLocation', e.target.value)}
+            />
+            <button className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+              <MapPin className="w-5 h-5" />
+            </button>
           </div>
+        </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>{WIZARD_STEPS[currentStep - 1]?.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {renderStepContent()}
-              </CardContent>
-            </Card>
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Tatzeit
+          </label>
+          <input
+            type="datetime-local"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={(e) => updateFormData('crimeDate', e.target.value)}
+          />
+        </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between mt-6">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={!canGoPrevious()}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Zurück
-              </Button>
-              
-              <div className="flex space-x-2">
-                <Button variant="outline" onClick={resetData}>
-                  Zurücksetzen
-                </Button>
-                {currentStep === 5 ? (
-                  <Button onClick={handleFinish} disabled={!canGoNext()}>
-                    <Globe className="w-4 h-4 mr-2" />
-                    Fahndung erstellen
-                  </Button>
-                ) : (
-                  <Button onClick={handleNext} disabled={!canGoNext()}>
-                    Weiter
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                )}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Tathergang
+          </label>
+          <textarea
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            rows={4}
+            placeholder="Beschreiben Sie den Tathergang..."
+            onChange={(e) => updateFormData('crimeDescription', e.target.value)}
+          />
+          <p className="text-sm text-gray-500 mt-1">AI-Vorschläge verfügbar</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const AppearanceStep = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Personenbeschreibung</h2>
+        <p className="text-gray-600">Detaillierte Beschreibung der gesuchten Person.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Geschlecht</label>
+          <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">Bitte wählen</option>
+            <option value="male">Männlich</option>
+            <option value="female">Weiblich</option>
+            <option value="diverse">Divers</option>
+            <option value="unknown">Unbekannt</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Alter (geschätzt)</label>
+          <input
+            type="text"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="z.B. 25-30 Jahre"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Größe</label>
+          <input
+            type="text"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="z.B. 180 cm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Statur</label>
+          <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">Bitte wählen</option>
+            <option value="slim">Schlank</option>
+            <option value="normal">Normal</option>
+            <option value="athletic">Sportlich</option>
+            <option value="strong">Kräftig</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Besondere Merkmale</label>
+        <textarea
+          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          rows={3}
+          placeholder="Tattoos, Narben, Auffälligkeiten..."
+        />
+      </div>
+    </div>
+  );
+
+  const MediaUploadStep = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Bilder und Medien</h2>
+        <p className="text-gray-600">Laden Sie relevante Bilder und Dokumente hoch.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Hauptbild</label>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer">
+            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-600">Klicken oder Datei hierher ziehen</p>
+            <p className="text-sm text-gray-500 mt-2">JPG, PNG bis 10MB</p>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Weitere Bilder</label>
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
+                <Camera className="w-8 h-8 text-gray-400" />
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
-        </main>
+    </div>
+  );
+
+  const ContactStep = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Kontakt & Veröffentlichung</h2>
+        <p className="text-gray-600">Kontaktinformationen für Hinweise.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Hinweise an <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="z.B. Kripo Stuttgart"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Telefon</label>
+            <input
+              type="tel"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="0711/110"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">E-Mail</label>
+            <input
+              type="email"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="hinweise@polizei.de"
+            />
+          </div>
+        </div>
+
+        <div className="border-t pt-4">
+          <label className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 rounded" />
+            <span>Sofort veröffentlichen</span>
+          </label>
+          <label className="flex items-center space-x-3 mt-2">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 rounded" />
+            <span>In sozialen Medien teilen</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Early return for loading state
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Laden...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show Preview Tabs if in preview mode
+  if (showPreview) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <Header />
+
+        {/* Preview Content */}
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <WizardPreviewTabs 
+            formData={formData} 
+            category={category}
+            onBackToWizard={handleBackToWizard}
+          />
+        </div>
 
         {/* Footer */}
-        <footer className="bg-gray-800 text-white py-8">
-          <div className="container mx-auto px-4 text-center">
-            <p className="text-sm text-gray-400">
-              © 2024 Fahndung - Ein System zur Verwaltung öffentlicher Fahndungen
-            </p>
+        <Footer />
+      </div>
+    );
+  }
+
+    return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <Header />
+
+      {/* Progress Bar */}
+      <div className="bg-white border-b">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">
+              Schritt {currentStep} von {steps.length || 1}
+            </span>
+            <span className="text-sm text-gray-500">
+              {Math.round(progress)}% abgeschlossen
+            </span>
           </div>
-        </footer>
-    </>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div
+          className="bg-white rounded-lg shadow-sm p-8"
+        >
+          {renderStepContent()}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between mt-8">
+          <Button
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 1}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Zurück
+          </Button>
+
+          <Button
+            onClick={nextStep}
+            disabled={!category && currentStep === 1}
+          >
+            {currentStep >= (steps.length || 1) ? 'Vorschau anzeigen' : 'Weiter'}
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <Footer />
+    </div>
   );
 } 

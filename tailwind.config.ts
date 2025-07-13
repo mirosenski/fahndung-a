@@ -42,6 +42,38 @@ const config: Config = {
           DEFAULT: "hsl(var(--color-card))",
           foreground: "hsl(var(--color-card-foreground))",
         },
+        // Einfache Standard-Farben
+        white: "hsl(var(--color-white))",
+        black: "hsl(var(--color-black))",
+        gray: {
+          50: "hsl(var(--color-gray-50))",
+          100: "hsl(var(--color-gray-100))",
+          200: "hsl(var(--color-gray-200))",
+          300: "hsl(var(--color-gray-300))",
+          400: "hsl(var(--color-gray-400))",
+          500: "hsl(var(--color-gray-500))",
+          600: "hsl(var(--color-gray-600))",
+          700: "hsl(var(--color-gray-700))",
+          800: "hsl(var(--color-gray-800))",
+          900: "hsl(var(--color-gray-900))",
+        },
+        blue: {
+          500: "hsl(var(--color-blue-500))",
+          600: "hsl(var(--color-blue-600))",
+          700: "hsl(var(--color-blue-700))",
+        },
+        red: {
+          500: "hsl(var(--color-red-500))",
+          600: "hsl(var(--color-red-600))",
+        },
+        green: {
+          500: "hsl(var(--color-green-500))",
+          600: "hsl(var(--color-green-600))",
+        },
+        yellow: {
+          500: "hsl(var(--color-yellow-500))",
+          600: "hsl(var(--color-yellow-600))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
