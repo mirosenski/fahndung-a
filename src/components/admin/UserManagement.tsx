@@ -38,8 +38,12 @@ export function UserManagement() {
     createUserMutation.mutate(userData);
   };
 
-  const handleUpdateUser = (userData: { id: string; name?: string; email?: string; role?: "ADMIN" | "USER" }) => {
-    updateUserMutation.mutate(userData);
+  const handleUpdateUser = (userData: { id?: string; name?: string; email?: string; role?: "ADMIN" | "USER" }) => {
+    if (!userData.id) {
+      alert("Fehler: Benutzer-ID fehlt!");
+      return;
+    }
+    updateUserMutation.mutate(userData as { id: string; name?: string; email?: string; role?: "ADMIN" | "USER" });
   };
 
   const handleDeleteUser = (userId: string) => {
