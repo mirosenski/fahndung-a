@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 interface UserDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  // onSubmit: Für Bearbeiten id Pflicht, für Anlegen optional
   onSubmit: (data: { id?: string; name?: string; email: string; role: "ADMIN" | "USER" }) => void;
   title: string;
   submitLabel: string;
-  user?: any;
+  user?: { id?: string; name?: string; email?: string; role?: "ADMIN" | "USER" };
 }
 
 export function UserDialog({ isOpen, onClose, onSubmit, title, submitLabel, user }: UserDialogProps) {
@@ -65,12 +66,19 @@ export function UserDialog({ isOpen, onClose, onSubmit, title, submitLabel, user
       return;
     }
 
-    const submitData = {
-      ...(user?.id && { id: user.id }),
-      name: formData.name || undefined,
-      email: formData.email,
-      role: formData.role,
-    };
+    // Wenn user vorhanden und user.id existiert, id als Pflichtfeld übergeben
+    const submitData = user && user.id
+      ? {
+          id: user.id,
+          name: formData.name || undefined,
+          email: formData.email,
+          role: formData.role,
+        }
+      : {
+          name: formData.name || undefined,
+          email: formData.email,
+          role: formData.role,
+        };
 
     onSubmit(submitData);
   };
