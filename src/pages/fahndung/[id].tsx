@@ -97,7 +97,7 @@ export default function InvestigationDetailPage() {
             </div>
             <nav className="flex items-center space-x-6">
               <Link href="/admin" className="text-sm font-medium hover:text-primary">
-                Dashboard
+                Next-Admin Dashboard
               </Link>
               <Link href="/wizard-complete" className="text-sm font-medium hover:text-primary">
                 Neue Fahndung

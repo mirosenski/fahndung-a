@@ -1,29 +1,102 @@
-# Create T3 App
+# Fahndung - Öffentliche Fahndungen
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+Ein System zur Verwaltung öffentlicher Fahndungen und Vermisstenmeldungen.
 
-## What's next? How do I make an app with this?
+## 🚀 Deployment auf Vercel
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+### 1. Datenbank einrichten
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+Für Vercel benötigen Sie eine PostgreSQL-Datenbank. Empfohlene Optionen:
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+- **Vercel Postgres** (einfachste Option)
+- **Neon** (kostenlos)
+- **Supabase** (kostenlos)
 
-## Learn More
+### 2. Umgebungsvariablen in Vercel
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+Fügen Sie diese Umgebungsvariablen in Ihrem Vercel-Projekt hinzu:
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+```env
+DATABASE_URL="postgresql://username:password@host:port/database"
+```
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+### 3. Deployment
 
-## How do I deploy this?
+1. **Repository zu Vercel verbinden**
+   - Gehen Sie zu [vercel.com](https://vercel.com)
+   - Verbinden Sie Ihr GitHub-Repository
+   - Wählen Sie das Repository aus
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+2. **Build-Einstellungen**
+   - Framework: Next.js
+   - Build Command: `prisma generate && prisma db push && next build`
+   - Install Command: `pnpm install`
+
+3. **Deploy**
+   - Klicken Sie auf "Deploy"
+   - Vercel wird automatisch die Datenbank migrieren
+
+### 4. Demo-Login
+
+Nach dem Deployment können Sie sich mit den Demo-Zugangsdaten anmelden:
+
+- **E-Mail:** admin@demo.de
+- **Passwort:** demo123
+
+## 🛠 Lokale Entwicklung
+
+```bash
+# Abhängigkeiten installieren
+pnpm install
+
+# Datenbank generieren
+pnpm prisma generate
+
+# Entwicklungsserver starten
+pnpm dev
+```
+
+## 📁 Projektstruktur
+
+```
+src/
+├── components/          # React-Komponenten
+│   ├── admin/          # Admin-Dashboard Komponenten
+│   ├── layout/         # Layout-Komponenten
+│   └── ui/             # UI-Komponenten
+├── pages/              # Next.js Seiten
+│   ├── admin.tsx       # Admin-Dashboard
+│   ├── login.tsx       # Login-Seite
+│   └── index.tsx       # Startseite
+├── server/             # Backend-Logik
+│   ├── api/            # tRPC API
+│   └── db.ts           # Datenbankverbindung
+└── utils/              # Hilfsfunktionen
+    ├── api.ts          # tRPC-Client
+    └── session.ts      # Session-Management
+```
+
+## 🔧 Technologien
+
+- **Frontend:** Next.js, React, TypeScript
+- **Styling:** Tailwind CSS
+- **UI-Komponenten:** Radix UI
+- **Backend:** tRPC, Prisma
+- **Datenbank:** PostgreSQL (Produktion), SQLite (Entwicklung)
+- **Authentication:** Demo-Login (Session-basiert)
+
+## 📝 Features
+
+- ✅ Demo-Login mit Session-Management
+- ✅ Admin-Dashboard mit Benutzerverwaltung
+- ✅ Datenbankanbindung mit Prisma
+- ✅ Responsive Design
+- ✅ tRPC für type-safe API
+- ✅ Vercel-Deployment bereit
+
+## 🚨 Wichtige Hinweise
+
+1. **Datenbank:** Für Produktion PostgreSQL verwenden
+2. **Umgebungsvariablen:** DATABASE_URL in Vercel setzen
+3. **Demo-Login:** Nur für Entwicklung/Demo-Zwecke
+4. **Sicherheit:** Für Produktion echte Authentifizierung implementieren

@@ -1,142 +1,150 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Shield, Plus, Search, Filter, FileText, Globe, Users, AlertTriangle, User, Settings, Database } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Edit, 
-  Eye, 
-  Trash2, 
-  Globe, 
-  Shield, 
-  Users, 
-  FileText, 
-  Calendar,
-  TrendingUp,
-  AlertTriangle
-} from "lucide-react";
+import { UserManagement } from "~/components/admin/UserManagement";
+import { api } from "~/utils/api";
+import { getDemoSession } from "~/utils/session";
+import { useRouter } from "next/router";
 
 // Mock-Daten für Demo
 const mockInvestigations = [
   {
     id: "1",
+    caseNumber: "BW-1234/1",
     title: "Max Mustermann",
     category: "WANTED_PERSON",
     priority: "URGENT",
     location: "Stuttgart",
     date: "2024-06-01",
     status: "PUBLISHED",
-    caseNumber: "BW-1234/1",
-    shortInfo: "Tatverdächtiger nach Raub",
   },
   {
     id: "2",
+    caseNumber: "BW-5678/2",
     title: "Anna Beispiel",
     category: "MISSING_PERSON",
     priority: "NORMAL",
     location: "Karlsruhe",
     date: "2024-05-30",
     status: "DRAFT",
-    caseNumber: "BW-5678/2",
-    shortInfo: "Vermisste Person",
   },
   {
     id: "3",
+    caseNumber: "BW-9012/3",
     title: "Unbekannte Person",
     category: "UNKNOWN_DEAD",
     priority: "NORMAL",
     location: "Freiburg",
     date: "2024-05-15",
     status: "PUBLISHED",
-    caseNumber: "BW-9012/3",
-    shortInfo: "Unbekannte Tote",
-  },
-  {
-    id: "4",
-    title: "Mountainbike gestohlen",
-    category: "STOLEN_GOODS",
-    priority: "NORMAL",
-    location: "Heidelberg",
-    date: "2024-05-10",
-    status: "DRAFT",
-    caseNumber: "BW-3456/4",
-    shortInfo: "Gestohlenes Fahrrad",
-  },
-  {
-    id: "5",
-    title: "Elias Winter",
-    category: "WANTED_PERSON",
-    priority: "URGENT",
-    location: "Heidelberg",
-    date: "2024-06-02",
-    status: "PUBLISHED",
-    caseNumber: "BW-7890/5",
-    shortInfo: "Tatverdächtiger nach Einbruch",
   },
 ];
 
-export default function Dashboard() {
+function getCategoryLabel(category: string): string {
+  switch (category) {
+    case "WANTED_PERSON": return "Straftäter";
+    case "MISSING_PERSON": return "Vermisste Person";
+    case "UNKNOWN_DEAD": return "Unbekannte Tote";
+    case "STOLEN_GOODS": return "Gesuchte Sachen";
+    default: return category;
+  }
+}
+
+function getPriorityBadge(priority: string) {
+  const isUrgent = priority === "URGENT";
+  return (
+    <Badge variant={isUrgent ? "destructive" : "secondary"}>
+      {isUrgent ? "EILFAHNDUNG" : "Normal"}
+    </Badge>
+  );
+}
+
+function getStatusBadge(status: string) {
+  const isPublished = status === "PUBLISHED";
+  return (
+    <Badge variant={isPublished ? "default" : "outline"}>
+      {isPublished ? "Veröffentlicht" : "Entwurf"}
+    </Badge>
+  );
+}
+
+export default function AdminPage() {
+  const router = useRouter();
+  const [session, setSession] = useState<any>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [activeTab, setActiveTab] = useState("investigations");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
-  const filteredInvestigations = mockInvestigations.filter((investigation) => {
-    const matchesSearch = investigation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         investigation.caseNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || investigation.category === selectedCategory;
-    const matchesStatus = !selectedStatus || investigation.status === selectedStatus;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
+  useEffect(() => {
+    setIsClient(true);
+    const demoSession = getDemoSession();
+    if (!demoSession) {
+      router.push("/login");
+      return;
+    }
+    setSession(demoSession);
+  }, [router]);
+
+  // tRPC Queries für echte Daten
+  const { data: users } = api.user.list.useQuery(undefined, {
+    retry: false,
   });
 
   const stats = {
     total: mockInvestigations.length,
-    published: mockInvestigations.filter(i => i.status === "PUBLISHED").length,
-    draft: mockInvestigations.filter(i => i.status === "DRAFT").length,
-    urgent: mockInvestigations.filter(i => i.priority === "URGENT").length,
+    published: mockInvestigations.filter((i: any) => i.status === "PUBLISHED").length,
+    draft: mockInvestigations.filter((i: any) => i.status === "DRAFT").length,
+    urgent: mockInvestigations.filter((i: any) => i.priority === "URGENT").length,
+    users: users?.length || 0,
   };
 
-  function getCategoryLabel(category: string): string {
-    const labels = {
-      "WANTED_PERSON": "Straftäter",
-      "MISSING_PERSON": "Vermisste Person",
-      "UNKNOWN_DEAD": "Unbekannte Tote",
-      "STOLEN_GOODS": "Gesuchte Sachen",
-    };
-    return labels[category as keyof typeof labels] || category;
-  }
+  const filteredInvestigations = mockInvestigations.filter((investigation: any) => {
+    const matchesSearch = investigation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         investigation.caseNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || investigation.category === selectedCategory;
+    const matchesStatus = !selectedStatus || investigation.status === selectedStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
 
-  function getStatusBadge(status: string) {
-    switch (status) {
-      case "PUBLISHED":
-        return <Badge variant="default">Veröffentlicht</Badge>;
-      case "DRAFT":
-        return <Badge variant="secondary">Entwurf</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  }
+  const handleEditInvestigation = (id: string) => {
+    // Hier würde die Logik zum Bearbeiten stehen
+    alert(`Fahndung ${id} bearbeiten`);
+  };
 
-  function getPriorityBadge(priority: string) {
-    switch (priority) {
-      case "URGENT":
-        return <Badge variant="destructive">EILFAHNDUNG</Badge>;
-      case "NORMAL":
-        return <Badge variant="outline">Normal</Badge>;
-      default:
-        return <Badge variant="outline">{priority}</Badge>;
+  const handlePublishInvestigation = (id: string) => {
+    // Hier würde die Logik zum Veröffentlichen stehen
+    alert(`Fahndung ${id} veröffentlicht`);
+  };
+
+  const handleDeleteInvestigation = (id: string) => {
+    if (confirm("Sind Sie sicher, dass Sie diese Fahndung löschen möchten?")) {
+      // Hier würde die Logik zum Löschen stehen
+      alert(`Fahndung ${id} gelöscht`);
     }
+  };
+
+  if (!isClient || !session) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Lade Dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
       <Head>
-        <title>Dashboard - Fahndung A</title>
+        <title>Dashboard - Fahndung</title>
         <meta name="description" content="Dashboard für Fahndungsverwaltung" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -152,11 +160,11 @@ export default function Dashboard() {
               </Link>
             </div>
             <nav className="flex items-center space-x-6">
-              <Link href="/admin" className="text-sm font-medium text-primary">
+              <Link href={session ? "/admin" : "/login"} className="text-sm font-medium text-primary">
                 Dashboard
               </Link>
-              <Link href="/wizard-complete" className="text-sm font-medium hover:text-primary">
-                Neue Fahndung
+              <Link href={session ? "/wizard-complete" : "/login"} className="text-sm font-medium hover:text-primary">
+                Fahndung erstellen
               </Link>
             </nav>
           </div>
@@ -168,17 +176,17 @@ export default function Dashboard() {
           {/* Header mit Aktionen */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold">Fahndungsverwaltung</h2>
+              <h2 className="text-3xl font-bold">Administration</h2>
               <p className="text-gray-600 mt-2">
-                Verwalten Sie alle Fahndungen und erstellen Sie neue
+                Verwalten Sie Fahndungen, Benutzer und Systemeinstellungen
               </p>
             </div>
             <div className="flex space-x-2">
               <Button variant="outline">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
+                <Settings className="w-4 h-4 mr-2" />
+                Einstellungen
               </Button>
-              <Button onClick={() => window.location.href = "/wizard-complete"}>
+              <Button onClick={() => window.location.href = session ? "/wizard-complete" : "/login"}>
                 <Plus className="w-4 h-4 mr-2" />
                 Neue Fahndung
               </Button>
@@ -186,16 +194,16 @@ export default function Dashboard() {
           </div>
 
           {/* Statistiken */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Gesamt</CardTitle>
+                <CardTitle className="text-sm font-medium">Fahndungen</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.total}</div>
                 <p className="text-xs text-muted-foreground">
-                  Alle Fahndungen
+                  Gesamt
                 </p>
               </CardContent>
             </Card>
@@ -207,7 +215,7 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{stats.published}</div>
                 <p className="text-xs text-muted-foreground">
-                  Öffentlich sichtbar
+                  Öffentlich
                 </p>
               </CardContent>
             </Card>
@@ -219,7 +227,7 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{stats.draft}</div>
                 <p className="text-xs text-muted-foreground">
-                  Noch nicht veröffentlicht
+                  Entwürfe
                 </p>
               </CardContent>
             </Card>
@@ -231,71 +239,100 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{stats.urgent}</div>
                 <p className="text-xs text-muted-foreground">
-                  Hohe Priorität
+                  Eilfahndungen
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Benutzer</CardTitle>
+                <User className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.users}</div>
+                <p className="text-xs text-muted-foreground">
+                  Aktiv
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Such- und Filterbereich */}
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Suchen..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm"
-                >
-                  <option value="">Alle Kategorien</option>
-                  <option value="WANTED_PERSON">Straftäter</option>
-                  <option value="MISSING_PERSON">Vermisste Person</option>
-                  <option value="UNKNOWN_DEAD">Unbekannte Tote</option>
-                  <option value="STOLEN_GOODS">Gesuchte Sachen</option>
-                </select>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm"
-                >
-                  <option value="">Alle Status</option>
-                  <option value="PUBLISHED">Veröffentlicht</option>
-                  <option value="DRAFT">Entwurf</option>
-                </select>
-                <Button variant="outline" onClick={() => {
-                  setSearchTerm("");
-                  setSelectedCategory("");
-                  setSelectedStatus("");
-                }}>
-                  Filter zurücksetzen
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Tabs */}
+          <div className="border-b mb-6">
+            <nav className="flex space-x-8">
+              <button
+                onClick={() => setActiveTab("investigations")}
+                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "investigations"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Fahndungen</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("users")}
+                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "users"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <User className="w-4 h-4" />
+                <span>Benutzer</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("system")}
+                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "system"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Database className="w-4 h-4" />
+                <span>System</span>
+              </button>
+            </nav>
+          </div>
 
-          {/* Fahndungsliste */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Fahndungen ({filteredInvestigations.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {filteredInvestigations.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">Keine Fahndungen gefunden</p>
-                  <Button onClick={() => window.location.href = "/wizard-complete"}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Erste Fahndung erstellen
-                  </Button>
+          {/* Tab Content */}
+          {activeTab === "investigations" && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Fahndungen ({filteredInvestigations.length})</CardTitle>
+                  <div className="flex space-x-2">
+                    <Input
+                      placeholder="Suchen..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-64"
+                    />
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm"
+                    >
+                      <option value="">Alle Kategorien</option>
+                      <option value="WANTED_PERSON">Straftäter</option>
+                      <option value="MISSING_PERSON">Vermisste Person</option>
+                      <option value="UNKNOWN_DEAD">Unbekannte Tote</option>
+                      <option value="STOLEN_GOODS">Gesuchte Sachen</option>
+                    </select>
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm"
+                    >
+                      <option value="">Alle Status</option>
+                      <option value="PUBLISHED">Veröffentlicht</option>
+                      <option value="DRAFT">Entwurf</option>
+                    </select>
+                  </div>
                 </div>
-              ) : (
+              </CardHeader>
+              <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -311,16 +348,13 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredInvestigations.map((investigation) => (
+                      {filteredInvestigations.map((investigation: any) => (
                         <tr key={investigation.id} className="border-b hover:bg-gray-50">
                           <td className="py-3 px-4 text-sm font-mono">
                             {investigation.caseNumber}
                           </td>
                           <td className="py-3 px-4">
-                            <div>
-                              <div className="font-medium">{investigation.title}</div>
-                              <div className="text-sm text-gray-500">{investigation.shortInfo}</div>
-                            </div>
+                            <div className="font-medium">{investigation.title}</div>
                           </td>
                           <td className="py-3 px-4">
                             {getCategoryLabel(investigation.category)}
@@ -337,30 +371,26 @@ export default function Dashboard() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex space-x-2">
-                              <Button
-                                variant="ghost"
+                              <Button 
+                                variant="ghost" 
                                 size="sm"
-                                onClick={() => window.location.href = `/fahndung/${investigation.id}`}
+                                onClick={() => handleEditInvestigation(investigation.id)}
                               >
-                                <Eye className="w-4 h-4" />
+                                Bearbeiten
                               </Button>
-                              <Button
-                                variant="ghost"
+                              <Button 
+                                variant="ghost" 
                                 size="sm"
-                                onClick={() => window.location.href = `/wizard-complete?edit=${investigation.id}`}
+                                onClick={() => handlePublishInvestigation(investigation.id)}
                               >
-                                <Edit className="w-4 h-4" />
+                                Veröffentlichen
                               </Button>
-                              <Button
-                                variant="ghost"
+                              <Button 
+                                variant="ghost" 
                                 size="sm"
-                                onClick={() => {
-                                  if (confirm("Möchten Sie diese Fahndung wirklich löschen?")) {
-                                    alert("Fahndung wurde gelöscht!");
-                                  }
-                                }}
+                                onClick={() => handleDeleteInvestigation(investigation.id)}
                               >
-                                <Trash2 className="w-4 h-4" />
+                                Löschen
                               </Button>
                             </div>
                           </td>
@@ -369,11 +399,80 @@ export default function Dashboard() {
                     </tbody>
                   </table>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "users" && (
+            <UserManagement />
+          )}
+
+          {activeTab === "system" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Datenbank</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span>Datenbank-Status:</span>
+                      <Badge variant="default">Online</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Letzte Sicherung:</span>
+                      <span>Heute 14:30</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Datenbank-Größe:</span>
+                      <span>2.4 MB</span>
+                    </div>
+                    <Button className="w-full">
+                      <Database className="w-4 h-4 mr-2" />
+                      Sicherung erstellen
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>System-Einstellungen</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span>Automatische Backups:</span>
+                      <Badge variant="default">Aktiviert</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>E-Mail-Benachrichtigungen:</span>
+                      <Badge variant="outline">Deaktiviert</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Debug-Modus:</span>
+                      <Badge variant="outline">Deaktiviert</Badge>
+                    </div>
+                    <Button className="w-full">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Einstellungen bearbeiten
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-white py-8">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-sm text-gray-400">
+            © 2024 Fahndung - Ein System zur Verwaltung öffentlicher Fahndungen
+          </p>
+        </div>
+      </footer>
     </>
   );
 } 
