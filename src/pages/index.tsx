@@ -60,12 +60,11 @@ export default function HomePage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Shield className="w-8 h-8 text-primary" />
-              <h1 className="text-2xl font-bold">Fahndung A</h1>
+              <Link href="/" className="text-2xl font-bold hover:text-primary">
+                Fahndung
+              </Link>
             </div>
             <nav className="flex items-center space-x-6">
-              <Link href="/" className="text-sm font-medium hover:text-primary">
-                Startseite
-              </Link>
               <Link href="/admin" className="text-sm font-medium hover:text-primary">
                 Dashboard
               </Link>

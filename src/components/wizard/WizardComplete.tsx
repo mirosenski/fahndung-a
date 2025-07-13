@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
@@ -381,18 +382,40 @@ export function WizardComplete() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Shield className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold">Neue Fahndung erstellen</h1>
+    <>
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Shield className="w-8 h-8 text-primary" />
+              <Link href="/" className="text-2xl font-bold hover:text-primary">
+                Fahndung
+              </Link>
+            </div>
+            <nav className="flex items-center space-x-6">
+              <Link href="/admin" className="text-sm font-medium hover:text-primary">
+                Dashboard
+              </Link>
+              <Link href="/wizard-complete" className="text-sm font-medium text-primary">
+                Neue Fahndung
+              </Link>
+            </nav>
           </div>
-          <Button variant="outline" onClick={() => router.push("/")}>
-            Abbrechen
-          </Button>
         </div>
+      </header>
+
+      <main className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          {/* Page Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-3xl font-bold">Neue Fahndung erstellen</h1>
+            </div>
+            <Button variant="outline" onClick={() => router.push("/")}>
+              Abbrechen
+            </Button>
+          </div>
 
         {/* Demo-Auswahl (nur im ersten Schritt) */}
         {currentStep === 1 && (
@@ -512,6 +535,16 @@ export function WizardComplete() {
           </div>
         </div>
       </div>
-    </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="bg-gray-800 text-white py-8">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-sm text-gray-400">
+              © 2024 Fahndung - Ein System zur Verwaltung öffentlicher Fahndungen
+            </p>
+          </div>
+        </footer>
+    </>
   );
 } 
