@@ -11,7 +11,9 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
-    "create-demo-user": "tsx scripts/create-demo-user.ts"
+    "create-demo-user": "tsx scripts/create-demo-user.ts",
+    "db:push:local": "cp prisma/schema.local.prisma prisma/schema.prisma && prisma db push",
+    "db:push:prod": "cp prisma/schema.prisma prisma/schema.prisma && prisma db push"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
