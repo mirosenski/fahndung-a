@@ -80,7 +80,7 @@ const mockInvestigations = [
   },
 ];
 
-export default function AdminDashboard() {
+export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -136,8 +136,8 @@ export default function AdminDashboard() {
   return (
     <>
       <Head>
-        <title>Admin Dashboard - Fahndung A</title>
-        <meta name="description" content="Admin Dashboard für Fahndungsverwaltung" />
+        <title>Dashboard - Fahndung A</title>
+        <meta name="description" content="Dashboard für Fahndungsverwaltung" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -147,14 +147,14 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Shield className="w-8 h-8 text-primary" />
-              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+              <h1 className="text-2xl font-bold">Dashboard</h1>
             </div>
             <nav className="flex items-center space-x-6">
               <Link href="/" className="text-sm font-medium hover:text-primary">
                 Startseite
               </Link>
               <Link href="/admin" className="text-sm font-medium text-primary">
-                Admin Dashboard
+                Dashboard
               </Link>
               <Link href="/wizard-complete" className="text-sm font-medium hover:text-primary">
                 Neue Fahndung

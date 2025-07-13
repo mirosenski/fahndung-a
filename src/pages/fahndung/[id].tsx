@@ -98,7 +98,7 @@ export default function InvestigationDetailPage() {
                 Startseite
               </Link>
               <Link href="/admin" className="text-sm font-medium hover:text-primary">
-                Admin Dashboard
+                Dashboard
               </Link>
               <Link href="/wizard-complete" className="text-sm font-medium hover:text-primary">
                 Neue Fahndung
@@ -117,7 +117,7 @@ export default function InvestigationDetailPage() {
             </Link>
             <span className="text-gray-400">/</span>
             <Link href="/admin" className="text-sm text-gray-500 hover:text-primary">
-              Admin
+              Dashboard
             </Link>
             <span className="text-gray-400">/</span>
             <span className="text-sm font-medium">Fahndung {id}</span>

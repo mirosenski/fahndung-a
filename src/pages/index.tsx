@@ -67,7 +67,7 @@ export default function HomePage() {
                 Startseite
               </Link>
               <Link href="/admin" className="text-sm font-medium hover:text-primary">
-                Admin Dashboard
+                Dashboard
               </Link>
               <Link href="/wizard-complete" className="text-sm font-medium hover:text-primary">
                 Neue Fahndung
